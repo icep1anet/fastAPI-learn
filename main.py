@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, Path
+from fastapi import FastAPI, Query, Path, Body
 from typing import Union
 from enum import Enum
 from pydantic import BaseModel
@@ -102,9 +102,21 @@ async def create_item(item: Item):
         item_dict.update({"price_with_tax": price_with_tax})
     return item_dict
 
+class User(BaseModel):
+    username: str
+    full_name: Union[str, None] = None
+
+
 @app.put("/items/{item_id}")
-async def update_item(item_id: int, item: Item, q: Union[str, None] = None):
-    result = {"item_id": item_id, **item.dict()}
+async def update_item(
+    *,
+    item_id: int,
+    item: Item,
+    user: User,
+    importance: int = Body(gt=0),
+    q: Union[str, None] = None,
+):
+    results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
     if q:
-        result.update({"q": q})
-    return result
+        results.update({"q": q})
+    return results
