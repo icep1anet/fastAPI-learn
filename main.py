@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Path
 from typing import Union
 from enum import Enum
 from pydantic import BaseModel
@@ -10,16 +10,20 @@ app = FastAPI()
 async def root():
     return {"message": "Hello World"}
 
+# *を使うことでqが必須パラメータだったとしてもデフォルト値をもつパラメータの後に置くことができる。
 @app.get("/items/{item_id}")
-async def read_item(item_id: str, q: Union[str, None] = None, short: bool = False):
-    item = {"item_id": item_id}
+async def read_items(
+    *, 
+    item_id: int = Path(title="The ID of the item to get", gt=0, le=1000),
+    q: str,
+    size: float = Query(gt=0, lt=10.5),
+):
+    results = {"item_id": item_id}
     if q:
-        item.update({"q": q})
-    if not short:
-        item.update(
-            {"description": "This is an amazing item that has a long description"}
-        )
-    return item
+        results.update({"q": q})
+    if size:
+        results.update({"size": size})
+    return results
 
 # パスパラメータは関数の引数として受け取ることができ、順序を変えても問題ない
 @app.get("/users/{user_id}/items/{item_id}")
