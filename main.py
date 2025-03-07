@@ -21,7 +21,7 @@ async def read_item(item_id: str, q: Union[str, None] = None, short: bool = Fals
         )
     return item
 
-# クエリパラメータとパスパラメータで名前が被ってもよい
+# パスパラメータは関数の引数として受け取ることができ、順序を変えても問題ない
 @app.get("/users/{user_id}/items/{item_id}")
 async def read_user_item(
     user_id: int, item_id: str, q: Union[str, None] = None, short: bool = False
@@ -52,7 +52,7 @@ class ModelName(str, Enum):
 @app.get("/models/{model_name}")
 async def get_model(model_name: ModelName):
     if model_name is ModelName.alexnet:
-        # Enmuを返しても適切にそのValueを取得してくれる
+        # Enumを返しても適切にそのValueを取得してくれる
         return {"model_name": model_name, "message": "Deep Learning FTW!"}
 
     if model_name.value == "lenet":
@@ -70,3 +70,24 @@ fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"
 @app.get("/items/")
 async def read_item(skip: int = 0, limit: int = 10):
     return fake_items_db[skip : skip + limit]
+
+class Item(BaseModel):
+    name: str
+    description: Union[str, None] = None
+    price: float
+    tax: Union[float, None] = None
+
+@app.post("/items/")
+async def create_item(item: Item):
+    item_dict = item.dict()
+    if item.tax is not None:
+        price_with_tax = item.price + item.tax
+        item_dict.update({"price_with_tax": price_with_tax})
+    return item_dict
+
+@app.put("/items/{item_id}")
+async def update_item(item_id: int, item: Item, q: Union[str, None] = None):
+    result = {"item_id": item_id, **item.dict()}
+    if q:
+        result.update({"q": q})
+    return result
